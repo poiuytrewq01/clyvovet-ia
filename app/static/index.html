@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CLYVO VET · IA</title>
+<style>
+  :root{--bg:#f4f6f8;--card:#fff;--txt:#1d2733;--mut:#6b7785;--pri:#0f8b8d;--pri2:#0b6e70;--bd:#e2e7ec;
+        --urgente:#c62828;--alta:#ef6c00;--media:#f9a825;--baixa:#1e88e5;--ok:#2e7d32}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--txt)}
+  header{background:var(--pri);color:#fff;padding:14px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  header h1{font-size:20px;margin:0}
+  nav{display:flex;gap:6px;margin-left:auto}
+  nav button{background:transparent;border:1px solid #ffffff80;color:#fff;padding:6px 12px;border-radius:6px;cursor:pointer}
+  nav button.on{background:#fff;color:var(--pri)}
+  .badge{font-size:12px;padding:3px 8px;border-radius:12px;background:#ffffff30}
+  main{max-width:1150px;margin:0 auto;padding:16px}
+  .grid{display:grid;grid-template-columns:280px 1fr;gap:16px}
+  @media(max-width:800px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:16px;margin-bottom:16px}
+  .card h2{font-size:16px;margin:0 0 12px}
+  .pet{display:flex;align-items:center;gap:10px;padding:10px;border-radius:8px;cursor:pointer;border:1px solid transparent}
+  .pet:hover{background:#f0f4f7}.pet.sel{border-color:var(--pri);background:#e8f5f5}
+  .pet .ico{font-size:26px}.pet small{color:var(--mut);display:block}
+  .dot{width:10px;height:10px;border-radius:50%;margin-left:auto;flex:none}
+  .tag{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;color:#fff;text-transform:uppercase}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  td,th{padding:6px 4px;border-bottom:1px solid var(--bd);text-align:left}
+  th{color:var(--mut);font-weight:500}
+  .btn{background:var(--pri);color:#fff;border:0;padding:9px 16px;border-radius:7px;cursor:pointer;font-size:14px}
+  .btn:hover{background:var(--pri2)}.btn:disabled{opacity:.5;cursor:wait}
+  .btn.sec{background:#fff;color:var(--pri);border:1px solid var(--pri)}
+  .msg{background:#e8f5f5;border-left:4px solid var(--pri);padding:12px 14px;border-radius:6px;margin-top:12px;white-space:pre-wrap}
+  .origem{font-size:11px;color:var(--mut);margin-top:6px}
+  details{margin-top:8px;font-size:12px;color:var(--mut)} details pre{white-space:pre-wrap;background:#f6f8fa;padding:8px;border-radius:6px}
+  .chat{height:260px;overflow:auto;border:1px solid var(--bd);border-radius:8px;padding:10px;background:#fafbfc}
+  .b{max-width:85%;padding:8px 12px;border-radius:12px;margin:6px 0;font-size:14px;white-space:pre-wrap}
+  .b.eu{background:var(--pri);color:#fff;margin-left:auto}.b.ia{background:#fff;border:1px solid var(--bd)}
+  .b.emerg{background:#fdecea;border-color:var(--urgente)}
+  .row{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+  input,select{padding:8px;border:1px solid var(--bd);border-radius:6px;font-size:14px;flex:1;min-width:120px}
+  .info{display:flex;gap:18px;flex-wrap:wrap;color:var(--mut);font-size:14px}.info b{color:var(--txt)}
+  .sug{font-size:12px;background:#fff;border:1px solid var(--bd);border-radius:14px;padding:4px 10px;cursor:pointer}
+  .kpi{display:flex;gap:12px;flex-wrap:wrap}.kpi div{flex:1;min-width:140px;background:#f6f8fa;border-radius:8px;padding:12px}
+  .kpi b{font-size:24px;display:block}
+  .hide{display:none}
+</style>
+</head>
+<body>
+<header>
+  <h1>🐾 CLYVO VET</h1>
+  <span class="badge" id="status">IA: ...</span>
+  <nav><button id="tTutor" class="on" onclick="aba('tutor')">App do tutor</button>
+       <button id="tClinica" onclick="aba('clinica')">Painel da clínica</button></nav>
+</header>
+
+<main>
+<!-- ============ APP DO TUTOR ============ -->
+<section id="tutor" class="grid">
+  <div class="card"><h2>Pets</h2><div id="lista"></div></div>
+  <div id="detalhe"><div class="card">Selecione um pet.</div></div>
+</section>
+
+<!-- ============ PAINEL DA CLÍNICA ============ -->
+<section id="clinica" class="hide">
+  <div class="card">
+    <h2>Rotina diária de lembretes</h2>
+    <p style="color:var(--mut);font-size:14px;margin-top:0">Gera, com IA, o lembrete de todos os pets com pendência (o mesmo endpoint que o n8n chama todo dia às 8h).</p>
+    <button class="btn" onclick="rodarDiario(this)">Gerar lembretes de hoje</button>
+    <div id="diario"></div>
+  </div>
+  <div class="card"><h2>Resultados</h2><div id="metricas"></div></div>
+  <div class="card"><h2>Histórico de mensagens da IA</h2><div id="hist"></div></div>
+</section>
+</main>
+
+<script>
+const COR = {urgente:'var(--urgente)',alta:'var(--alta)',media:'var(--media)',baixa:'var(--baixa)',ok:'var(--ok)'};
+const ICO = {cachorro:'🐶',gato:'🐱'};
+const tag = u => `<span class="tag" style="background:${COR[u]||'#999'}">${u}</span>`;
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const br = d => d ? d.split('-').reverse().join('/') : '—';
+const api = async (url, opt={}) => {
+  const r = await fetch(url, {headers:{'Content-Type':'application/json'}, ...opt});
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+};
+let petAtual = null;
+
+function aba(q){
+  document.getElementById('tutor').classList.toggle('hide', q!=='tutor');
+  document.getElementById('clinica').classList.toggle('hide', q!=='clinica');
+  tTutor.classList.toggle('on', q==='tutor'); tClinica.classList.toggle('on', q==='clinica');
+  if (q==='clinica') { carregarMetricas(); carregarHist(); }
+}
+
+async function carregarStatus(){
+  const s = await api('/api/status');
+  document.getElementById('status').textContent = s.ia_modo==='gemini' ? `IA: Gemini (${s.modelo})` : 'IA: modo simulado';
+}
+
+async function carregarLista(){
+  const pets = await api('/api/pets');
+  document.getElementById('lista').innerHTML = pets.map(p => `
+    <div class="pet ${p.id===petAtual?'sel':''}" onclick="abrir(${p.id})">
+      <span class="ico">${ICO[p.especie]||'🐾'}</span>
+      <div><b>${esc(p.nome)}</b><small>${esc(p.raca)} · ${p.idade} · ${esc(p.tutor_nome)}</small></div>
+      <span class="dot" title="${p.urgencia}" style="background:${COR[p.urgencia]}"></span>
+    </div>`).join('');
+}
+
+async function abrir(id){
+  petAtual = id; carregarLista();
+  const d = await api(`/api/pets/${id}`);
+  const p = d.pet, eng = d.engajamento;
+  document.getElementById('detalhe').innerHTML = `
+  <div class="card">
+    <h2>${ICO[p.especie]||''} ${esc(p.nome)}</h2>
+    <div class="info">
+      <span>Espécie <b>${p.especie}</b></span><span>Raça <b>${esc(p.raca)}</b></span>
+      <span>Idade <b>${p.idade} (${p.fase})</b></span><span>Peso <b>${p.peso_kg} kg</b></span>
+      <span>Tutor <b>${esc(p.tutor_nome)}</b></span>
+      <span>Engajamento <b style="color:${eng.ativo?'var(--ok)':'var(--urgente)'}">${eng.ativo?'ativo':'inativo'}</b>
+        ${eng.dias_sem_checkin!=null?`(último check-in há ${eng.dias_sem_checkin} dias)`:''}</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Pendências calculadas</h2>
+    ${d.pendencias.length ? `<table><tr><th>Item</th><th>Data</th><th>Situação</th><th>Urgência</th></tr>
+      ${d.pendencias.map(x=>`<tr><td>${esc(x.descricao)}</td><td>${br(x.data)}</td>
+        <td>${x.dias<0?`atrasada há ${-x.dias} dias`:x.dias===0?'vence hoje':`vence em ${x.dias} dias`}</td><td>${tag(x.urgencia)}</td></tr>`).join('')}
+      </table>` : '<p>Nenhuma pendência. 🎉</p>'}
+    <div class="row"><button class="btn" onclick="gerarLembrete(this)">✨ Gerar lembrete personalizado com IA</button></div>
+    <div id="lembrete"></div>
+  </div>
+
+  <div class="card">
+    <h2>Assistente · ${esc(p.nome)}</h2>
+    <div class="chat" id="chat"><div class="b ia">Olá! Pergunte qualquer coisa sobre ${esc(p.nome)}. Eu uso o histórico dele pra responder.</div></div>
+    <div class="row">
+      ${['Tem alguma vacina atrasada?','Quais cuidados ele precisa nessa idade?','Faz tempo que ele não vai ao veterinário?','Ele comeu chocolate, o que faço?']
+        .map(s=>`<span class="sug" onclick="perguntar('${s}')">${s}</span>`).join('')}
+    </div>
+    <div class="row"><input id="pergunta" placeholder="Digite sua pergunta..." onkeydown="if(event.key==='Enter')perguntar()">
+      <button class="btn" onclick="perguntar()">Enviar</button></div>
+  </div>
+
+  <div class="card">
+    <h2>Histórico</h2>
+    <table><tr><th>Vacina</th><th>Aplicação</th><th>Vencimento</th><th></th></tr>
+      ${d.vacinas.map(v=>`<tr><td>${esc(v.nome)}</td><td>${br(v.data_aplicacao)}</td><td>${br(v.data_vencimento)}</td>
+      <td><a href="#" onclick="removerVacina(${v.id});return false" title="remover">✕</a></td></tr>`).join('')}</table>
+    <div class="row">
+      <input id="vNome" placeholder="Nome da vacina"><input id="vApl" type="date" title="Aplicação">
+      <input id="vVenc" type="date" title="Vencimento"><button class="btn sec" onclick="addVacina()">Registrar vacina</button>
+    </div>
+    <br>
+    <table><tr><th>Consulta</th><th>Data</th><th>Observações</th><th>Retorno</th></tr>
+      ${d.consultas.map(c=>`<tr><td>${esc(c.motivo)}</td><td>${br(c.data)}</td><td>${esc(c.observacoes)}</td><td>${br(c.retorno_em)}</td></tr>`).join('') || '<tr><td colspan=4>—</td></tr>'}</table>
+    <br>
+    <div class="row"><select id="ckTipo"><option>passeio</option><option>alimentacao</option><option>peso</option><option>remedio</option></select>
+      <button class="btn sec" onclick="checkin()">Fazer check-in de hoje</button></div>
+  </div>`;
+}
+
+async function gerarLembrete(btn){
+  btn.disabled = true; btn.textContent = 'Gerando...';
+  try {
+    const r = await api(`/api/pets/${petAtual}/lembrete`, {method:'POST'});
+    document.getElementById('lembrete').innerHTML = `
+      <div class="msg">${esc(r.mensagem)}</div>
+      <div class="origem">Urgência ${tag(r.urgencia)} · gerado por <b>${r.origem}</b></div>
+      ${r.erro_ia ? `<div class="origem" style="color:var(--urgente)">Falha no Gemini: ${esc(r.erro_ia)}</div>` : ''}
+      <details><summary>Ver dados/prompt enviados à IA</summary><pre>${esc(r.prompt)}</pre></details>`;
+  } catch(e){ alertaErro(e); }
+  btn.disabled = false; btn.textContent = '✨ Gerar lembrete personalizado com IA';
+}
+
+async function perguntar(txt){
+  const inp = document.getElementById('pergunta');
+  const q = txt || inp.value.trim(); if (!q) return; inp.value = '';
+  const chat = document.getElementById('chat');
+  chat.insertAdjacentHTML('beforeend', `<div class="b eu">${esc(q)}</div><div class="b ia" id="dig">digitando...</div>`);
+  chat.scrollTop = chat.scrollHeight;
+  try {
+    const r = await api(`/api/pets/${petAtual}/chat`, {method:'POST', body: JSON.stringify({pergunta:q})});
+    const el = document.getElementById('dig'); el.removeAttribute('id');
+    el.textContent = r.resposta; if (r.emergencia) el.classList.add('emerg');
+    el.insertAdjacentHTML('beforeend', `<div class="origem">${r.origem}${r.erro_ia ? ' · falha no Gemini: ' + esc(r.erro_ia) : ''}</div>`);
+  } catch(e){ document.getElementById('dig').textContent = 'Erro: ' + e.message; }
+  chat.scrollTop = chat.scrollHeight;
+}
+
+async function addVacina(){
+  const body = {nome: vNome.value.trim(), data_aplicacao: vApl.value || null, data_vencimento: vVenc.value};
+  if (!body.nome || !body.data_vencimento) return alertaErro('Preencha nome e vencimento');
+  await api(`/api/pets/${petAtual}/vacinas`, {method:'POST', body: JSON.stringify(body)}); abrir(petAtual);
+}
+async function removerVacina(id){ await api(`/api/pets/${petAtual}/vacinas/${id}`, {method:'DELETE'}); abrir(petAtual); }
+async function checkin(){ await api(`/api/pets/${petAtual}/checkin`, {method:'POST', body: JSON.stringify({tipo: ckTipo.value})}); abrir(petAtual); }
+function alertaErro(e){ document.getElementById('lembrete').innerHTML = `<div class="msg" style="border-color:var(--urgente)">${esc(e.message||e)}</div>`; }
+
+async function rodarDiario(btn){
+  btn.disabled = true; btn.textContent = 'Gerando...';
+  const r = await api('/api/lembretes/diario');
+  document.getElementById('diario').innerHTML = `<p><b>${r.total}</b> lembretes gerados em ${br(r.data)}</p>
+    <table><tr><th>Pet</th><th>Tutor</th><th>Urgência</th><th>Mensagem</th></tr>
+    ${r.lembretes.map(l=>`<tr><td>${esc(l.pet)}</td><td>${esc(l.tutor)}</td><td>${tag(l.urgencia)}</td><td>${esc(l.mensagem)}</td></tr>`).join('')}</table>`;
+  btn.disabled = false; btn.textContent = 'Gerar lembretes de hoje';
+  carregarMetricas(); carregarHist();
+}
+async function carregarMetricas(){
+  const m = await api('/api/metricas');
+  const o = Object.fromEntries(m.por_origem.map(x=>[x.origem,x.total]));
+  document.getElementById('metricas').innerHTML = `<div class="kpi">
+    <div><b>${m.total_mensagens}</b>mensagens geradas</div><div><b>${o.gemini||0}</b>via Gemini</div>
+    <div><b>${o.simulado||0}</b>modo simulado</div><div><b>${o.regra||0}</b>alertas de emergência (regra)</div></div>
+    <p style="font-size:14px">Lembretes por urgência: ${m.lembretes_por_urgencia.map(x=>`${tag(x.urgencia)} ${x.total}`).join(' &nbsp; ') || '—'}</p>`;
+}
+async function carregarHist(){
+  const h = await api('/api/mensagens?limite=30');
+  document.getElementById('hist').innerHTML = h.length ? `<table><tr><th>Quando</th><th>Pet</th><th>Tipo</th><th>Origem</th><th>Resposta</th></tr>
+    ${h.map(x=>`<tr><td>${esc(x.criado_em)}</td><td>${esc(x.pet)}</td><td>${x.tipo}</td><td>${x.origem}</td><td>${esc(x.resposta)}</td></tr>`).join('')}</table>` : '—';
+}
+
+carregarStatus(); carregarLista().then(()=>abrir(1));
+</script>
+</body>
+</html>

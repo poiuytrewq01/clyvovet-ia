@@ -1,0 +1,47 @@
+{
+  "name": "CLYVO VET - Lembretes diários com IA",
+  "nodes": [
+    {
+      "parameters": {"rule": {"interval": [{"field": "cronExpression", "expression": "0 8 * * *"}]}},
+      "name": "Todo dia às 8h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 0]
+    },
+    {
+      "parameters": {"url": "http://host.docker.internal:8000/api/lembretes/diario", "options": {}},
+      "name": "Gerar lembretes (API CLYVO VET)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [240, 0]
+    },
+    {
+      "parameters": {"fieldToSplitOut": "lembretes", "options": {}},
+      "name": "Um item por pet",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [480, 0]
+    },
+    {
+      "parameters": {
+        "assignments": {"assignments": [
+          {"id": "1", "name": "para", "value": "={{ $json.tutor }}", "type": "string"},
+          {"id": "2", "name": "pet", "value": "={{ $json.pet }}", "type": "string"},
+          {"id": "3", "name": "urgencia", "value": "={{ $json.urgencia }}", "type": "string"},
+          {"id": "4", "name": "texto", "value": "={{ $json.mensagem }}", "type": "string"}
+        ]},
+        "options": {}
+      },
+      "name": "Montar notificação (trocar por WhatsApp/E-mail)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [720, 0]
+    }
+  ],
+  "connections": {
+    "Todo dia às 8h": {"main": [[{"node": "Gerar lembretes (API CLYVO VET)", "type": "main", "index": 0}]]},
+    "Gerar lembretes (API CLYVO VET)": {"main": [[{"node": "Um item por pet", "type": "main", "index": 0}]]},
+    "Um item por pet": {"main": [[{"node": "Montar notificação (trocar por WhatsApp/E-mail)", "type": "main", "index": 0}]]}
+  },
+  "settings": {}
+}
